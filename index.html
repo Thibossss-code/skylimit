@@ -11,11 +11,15 @@
 .search-bar button{background:#0d47a1;color:white;border:none;padding:12px 16px;border-radius:8px;font-weight:bold}
 .boost{background:linear-gradient(135deg,#1976d2,#0d47a1);color:white;padding:14px;border-radius:12px;text-align:center;margin:14px;display:block;text-decoration:none;font-weight:800;font-size:16px}
 .categories{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin:14px}
-.cat{background:white;padding:14px;text-align:center;border-radius:12px;font-weight:700;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.cat{background:white;padding:14px;text-align:center;border-radius:12px;font-weight:700;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.06);cursor:pointer;border:1px solid #dde7ff;transition:.15s}
+.cat:active{transform:scale(.96)}
+.cat.active{background:#0d47a1;color:white}
 .ads-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:14px}
-.ad{background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.ad{background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:14px}
 .form-box{background:white;border:2px solid #0d47a1;border-radius:14px;padding:18px;margin:14px}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#0d47a1;color:white;padding:10px 18px;border-radius:20px;font-size:13px;display:none;z-index:99}
 </style></head><body>
+<div id="toast" class="toast"></div>
 <div class="header">
 <div class="logo">🌐 Skylimit Worldwide</div>
 <div style="font-size:12px">📱 Phone + 💻 Desktop + 🌍 Worldwide</div>
@@ -23,38 +27,71 @@
 </div>
 <div class="container">
 <div class="search-bar">
-<input type="text" id="searchInput" placeholder="Search jobs, services, products, real estate...">
-<button>🔍</button>
+<input type="text" id="searchInput" placeholder="Search jobs, services, products, real estate..." oninput="searchAds()">
+<button onclick="searchAds()">🔍</button>
 </div>
 <a class="boost" href="https://payhip.com/b/3YNjs" target="_blank">🚀 BOOST YOUR AD FOR $5 WORLDWIDE</a>
 
 <div class="categories">
-<div class="cat">💼<br>Jobs</div><div class="cat">🛠️<br>Services</div>
-<div class="cat">🛍️<br>Products</div><div class="cat">🏠<br>Real Estate</div>
-<div class="cat">🍔<br>Food</div><div class="cat">📱<br>Electronics</div>
-<div class="cat">🌿<br>Herbs</div><div class="cat">➕<br>Post Ad</div>
+<div class="cat" onclick="filterAds('jobs',this)">💼<br>Jobs</div>
+<div class="cat" onclick="filterAds('services',this)">🛠️<br>Services</div>
+<div class="cat" onclick="filterAds('products',this)">🛍️<br>Products</div>
+<div class="cat" onclick="filterAds('realestate',this)">🏠<br>Real Estate</div>
+<div class="cat" onclick="filterAds('food',this)">🍔<br>Food</div>
+<div class="cat" onclick="filterAds('electronics',this)">📱<br>Electronics</div>
+<div class="cat" onclick="filterAds('herbs',this)">🌿<br>Herbs</div>
+<div class="cat" style="background:#ffca28;color:#0d47a1;" onclick="document.getElementById('postAd').scrollIntoView({behavior:'smooth'});showToast('Insert your advert here 👇')">➕<br>Post Ad</div>
 </div>
 
-<!-- MULTIFUNCTION ADS GRID -->
-<div class="ads-grid">
-<div class="ad"><div class="ad-body"><b>Software Engineer - Remote</b><br>Berlin • $90k</div></div>
-<div class="ad"><div class="ad-body"><b>🌿 NatuTrack Herbs Guide</b><br>Featured Store</div></div>
-<div class="ad"><div class="ad-body"><b>3BR Apartment</b><br>Toronto • $2,200/mo</div></div>
+<!-- MULTIFUNCTION ADS GRID - YOUR 3 ADS KEPT + data-cat ADDED FOR FILTER -->
+<div class="ads-grid" id="adsGrid">
+<div class="ad" data-cat="jobs"><div class="ad-body"><b>Software Engineer - Remote</b><br>Berlin • $90k</div></div>
+<div class="ad" data-cat="herbs products"><div class="ad-body"><b>🌿 NatuTrack Herbs Guide</b><br>Featured Store</div></div>
+<div class="ad" data-cat="realestate"><div class="ad-body"><b>3BR Apartment</b><br>Toronto • $2,200/mo</div></div>
 </div>
 
-<!-- WHERE USERS INSERT THEIR ADVERT - FIXED -->
+<!-- WHERE USERS INSERT THEIR ADVERT - FIXED - YOUR FORM KEPT -->
 <div class="form-box" id="postAd">
 <h3 style="text-align:center;color:#0d47a1;">📤 WHERE USERS INSERT THEIR ADVERT</h3>
-<form onsubmit="alert('Ad submitted! Now pay $5'); window.open('https://payhip.com/b/3YNjs','_blank'); return false;">
-<select required><option>Jobs</option><option>Services</option><option>Products</option><option>Real Estate</option><option>Food</option><option>Electronics</option><option>Herbs</option></select><br><br>
-<input type="text" placeholder="Ad Title" required><br><br>
-<textarea placeholder="Description"></textarea><br><br>
-<input type="text" placeholder="WhatsApp / Website Link" required><br><br>
-<input type="email" placeholder="Your Email" required><br><br>
-<button style="width:100%;background:#ffca28;color:#0d47a1;padding:14px;font-weight:900;border:none;border-radius:10px;">✅ SUBMIT + PAY $5</button>
+<form onsubmit="addNewAd(); alert('Ad submitted! Now pay $5'); window.open('https://payhip.com/b/3YNjs','_blank'); return false;">
+<select id="catSelect" required><option>Jobs</option><option>Services</option><option>Products</option><option>Real Estate</option><option>Food</option><option>Electronics</option><option>Herbs</option></select><br><br>
+<input id="titleIn" type="text" placeholder="Ad Title" required><br><br>
+<textarea id="descIn" placeholder="Description"></textarea><br><br>
+<input id="linkIn" type="text" placeholder="WhatsApp / Website Link" required><br><br>
+<input id="emailIn" type="email" placeholder="Your Email" required><br><br>
+<button style="width:100%;background:#ffca28;color:#0d47a1;padding:14px;font-weight:900;border:none;border-radius:10px;cursor:pointer;">✅ SUBMIT + PAY $5</button>
 </form>
 </div>
 
 <a class="boost" href="https://payhip.com/b/3YNjs" target="_blank">💳 Pay $5 — Get Seen Worldwide</a>
 <a class="boost" style="background:#2e7d32;" href="https://payhip.com/NatuTrackBot3HerbsGuide" target="_blank">🌿 Open Herb Store</a>
-</div></body></html>
+</div>
+
+<!-- ADDED SCRIPT ONLY - NO CODE REMOVED -->
+<script>
+function showToast(m){var t=document.getElementById('toast');t.innerText=m;t.style.display='block';setTimeout(function(){t.style.display='none'},2500);}
+function filterAds(cat,el){
+ document.querySelectorAll('.cat').forEach(function(c){c.classList.remove('active')});
+ if(el) el.classList.add('active');
+ document.querySelectorAll('.ad').forEach(function(a){
+   a.style.display=a.getAttribute('data-cat').includes(cat)?'block':'none';
+ });
+ showToast(cat+' - '+document.querySelectorAll('.ad[data-cat*='+cat+']').length+' ads worldwide');
+ document.getElementById('catSelect').value=cat.charAt(0).toUpperCase()+cat.slice(1);
+}
+function searchAds(){
+ var q=document.getElementById('searchInput').value.toLowerCase();
+ document.querySelectorAll('.ad').forEach(function(a){
+   a.style.display=a.innerText.toLowerCase().includes(q)?'block':'none';
+ });
+}
+function addNewAd(){
+ var title=document.getElementById('titleIn').value;
+ var cat=document.getElementById('catSelect').value.toLowerCase();
+ var grid=document.getElementById('adsGrid');
+ var d=document.createElement('div');d.className='ad';d.setAttribute('data-cat',cat);
+ d.innerHTML='<div class=ad-body><b>'+title+'</b><br>New • '+cat+' • Worldwide</div>';
+ grid.prepend(d);
+}
+</script>
+</body></html>
